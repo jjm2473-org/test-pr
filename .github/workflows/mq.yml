@@ -1,0 +1,17 @@
+name: iStore Merge Queue
+
+on:
+  merge_group:
+    types: [checks_requested]
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  mq:
+    if: false
+    runs-on: ubuntu-latest
+    name: iStore Merge Queue
+    steps:
+      - name: dummy
+        run: sleep 1

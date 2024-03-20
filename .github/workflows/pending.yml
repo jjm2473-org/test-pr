@@ -1,14 +1,26 @@
 name: iStore Pending
 
 on:
-  workflow_dispatch:
-  merge_group:
+  pull_request:
+    branches:
+      - main
 
 env:
   TZ: Asia/Shanghai
 
 jobs:
+  others:
+    if: github.head_ref != 'pending'
+    runs-on: ubuntu-latest
+    name: iStore Fail
+    steps:
+      - name: Fail
+        run: |
+          echo "Must merge from pending branch" >&2
+          exit 1
+
   pending:
+    if: github.head_ref == 'pending'
     runs-on: ubuntu-latest
     name: iStore Pending
     steps:
@@ -41,6 +53,7 @@ jobs:
       - name: List Commits
         run: |
           git log --reverse --pretty=format:'%H' origin/pending...main > staging_dir/commits
+          [ "$(wc -l staging_dir/commits)" -gt 0 ]
 
       - name: Purge and Merge 
         run: |
@@ -78,4 +91,4 @@ jobs:
 
       - name: Push
         run: |
-            [ "$(wc -l staging_dir/commits)" -gt 0 ] && git push -f origin main:pending
+          git push -f origin main:pending
