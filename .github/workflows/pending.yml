@@ -65,6 +65,7 @@ jobs:
         run: |
           while read; do
             commit="$REPLY"
+            echo "pick $commit"
             git show --pretty= --name-only --no-renames $commit | grep '\.ipk$' || true > staging_dir/files
             git cherry-pick $commit
             git -C ../cloned checkout $commit
