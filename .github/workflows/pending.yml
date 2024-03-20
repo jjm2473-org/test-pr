@@ -56,12 +56,12 @@ jobs:
           cat staging_dir/commits
           [ -s staging_dir/commits ]
 
-      - name: Purge and Merge 
+      - name: Git user
         run: |
           git config user.email "actions-bot@noreply.github.com"
           git config user.name "Actions Bot"
 
-      - name: Purge and Merge 
+      - name: Purge and Merge
         run: |
           while read; do
             commit="$REPLY"
