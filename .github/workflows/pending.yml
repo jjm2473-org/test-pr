@@ -58,6 +58,11 @@ jobs:
 
       - name: Purge and Merge 
         run: |
+          git config user.email "actions-bot@noreply.github.com"
+          git config user.name "Actions Bot"
+
+      - name: Purge and Merge 
+        run: |
           while read; do
             commit="$REPLY"
             git show --pretty= --name-only --no-renames $commit | grep '\.ipk$' || true > staging_dir/files
