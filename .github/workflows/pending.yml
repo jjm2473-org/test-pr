@@ -10,7 +10,7 @@ env:
 
 jobs:
   others:
-    if: github.head_ref != 'pending'
+    if: github.event_name == 'pull_request' && github.head_ref != 'pending'
     runs-on: ubuntu-latest
     name: iStore Fail
     steps:
@@ -20,7 +20,7 @@ jobs:
           exit 1
 
   pending:
-    if: github.head_ref == 'pending'
+    if: github.event_name != 'pull_request' || github.head_ref == 'pending'
     runs-on: ubuntu-latest
     name: iStore Pending
     steps:
