@@ -55,6 +55,7 @@ jobs:
           git log --reverse --pretty=format:'%H' origin/pending...main > staging_dir/commits
           cat staging_dir/commits
           [ -s staging_dir/commits ]
+          echo >>staging_dir/commits
 
       - name: Git user
         run: |
@@ -65,12 +66,15 @@ jobs:
         run: |
           while read; do
             commit="$REPLY"
+            [ -n "$commit" ] || continue
             echo "pick $commit"
             git show --pretty= --name-only --no-renames $commit | grep '\.ipk$' || true > staging_dir/files
+            echo >>staging_dir/files
             git cherry-pick $commit
             git -C ../cloned checkout $commit
             while read; do
               file="$REPLY"
+              [ -n "$file" ] || continue
               dir="`dirname $file`"
               rm -f "$file"
               [ -f "../cloned/$file" ] || continue
