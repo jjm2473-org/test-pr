@@ -39,7 +39,7 @@ jobs:
       - name: Clone a workspace
         run: |
           git clone . ../cloned
-          rm -f ../cloned/.git
+          rm -rf ../cloned/.git
           cp -a .git ../cloned/
 
       - name: Mkdirs
