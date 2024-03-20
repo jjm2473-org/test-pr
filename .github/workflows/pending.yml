@@ -88,7 +88,6 @@ jobs:
               mkdir -p "$dir"
               cp -a "../cloned/$file" "$file"
             done < staging_dir/files
-            echo $commit >pickfrom.hash
             git add --all
             git commit --no-edit --amend
           done < staging_dir/commits
