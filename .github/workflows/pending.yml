@@ -32,7 +32,7 @@ jobs:
 
       - name: Fetch pending
         run: |
-          cat .git/config
+          git remote set-branches origin main
           git remote set-branches --add origin pending
           git fetch
           git merge-base --is-ancestor main origin/pending || { echo "pending branch MUST rebase to main!" >&2; exit 1; }
