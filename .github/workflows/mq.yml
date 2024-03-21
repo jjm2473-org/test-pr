@@ -13,5 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     name: iStore Merge Queue
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       - name: dummy
         run: sleep 1

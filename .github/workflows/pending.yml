@@ -1,10 +1,10 @@
 name: iStore Pending
 
 on:
-  workflow_dispatch:
-  pull_request:
-    branches:
-      - main
+   workflow_dispatch:
+#   pull_request:
+#     branches:
+#       - main
 
 env:
   TZ: Asia/Shanghai
