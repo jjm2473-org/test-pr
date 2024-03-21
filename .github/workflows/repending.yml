@@ -1,0 +1,111 @@
+name: iStore RePending
+
+on:
+   workflow_dispatch:
+#   pull_request:
+#     branches:
+#       - main
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  others:
+    if: github.event_name == 'pull_request' && !(github.head_ref == 'pending' && github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name)
+    runs-on: ubuntu-latest
+    name: iStore Fail
+    steps:
+      - name: Fail
+        run: |
+          echo "Must merge from pending branch" >&2
+          exit 1
+
+  pending:
+    if: github.event_name != 'pull_request' || (github.head_ref == 'pending' && github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name)
+    runs-on: ubuntu-latest
+    name: iStore rePending
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Fetch pending
+        run: |
+          git remote set-branches origin main
+          git remote set-branches --add origin pending
+          git fetch
+          git merge-base --is-ancestor main origin/pending || { echo "pending branch MUST rebase to main!" >&2; exit 1; }
+
+      - name: Clone a workspace
+        run: |
+          git clone . ../cloned
+          rm -rf ../cloned/.git
+          cp -a .git ../cloned/
+
+      - name: Mkdirs
+        run: |
+          mkdir staging_dir
+
+      - name: Save Current ipk list before
+        run: |
+          find work -type f | tee staging_dir/old.lst
+
+      - name: List Commits
+        run: |
+          git log --reverse --pretty=format:'%H' origin/pending...main > staging_dir/commits
+          cat staging_dir/commits
+          [ -s staging_dir/commits ]
+          echo >>staging_dir/commits
+
+      - name: Git user
+        run: |
+          git config user.email "actions-bot@noreply.github.com"
+          git config user.name "Actions Bot"
+
+      - name: Purge and Merge
+        run: |
+          while read; do
+            commit="$REPLY"
+            [ -n "$commit" ] || continue
+            echo "pick $commit"
+            git show --pretty= --name-only --no-renames $commit | grep '\.ipk$' || true > staging_dir/files
+            echo >>staging_dir/files
+            git cherry-pick $commit
+            git -C ../cloned checkout $commit
+            while read; do
+              file="$REPLY"
+              [ -n "$file" ] || continue
+              dir="`dirname $file`"
+              rm -f "$file"
+              [ -f "../cloned/$file" ] || continue
+              pkg=`tar -xOf "../cloned/$file" ./control.tar.gz | tar -xOz ./control | grep '^Package: ' | sed 's/^Package: \(.*\)$/\1/'`
+              ls "$dir/$pkg"_*.ipk | while read; do
+                del="$REPLY"
+                pkg0=`tar -xOf "$del" ./control.tar.gz | tar -xOz ./control | grep '^Package: ' | sed 's/^Package: \(.*\)$/\1/'`
+                [ "$pkg" = "$pkg0" ] || continue
+                rm -f "$del"
+              done
+              mkdir -p "$dir"
+              cp -a "../cloned/$file" "$file"
+            done < staging_dir/files
+            git add --all
+            git commit --no-edit --amend
+          done < staging_dir/commits
+
+      - name: Save Current ipk list after
+        run: |
+          find work -type f | tee staging_dir/new.lst
+
+      - name: Report
+        run: diff -au1 staging_dir/old.lst staging_dir/new.lst || true
+
+      - name: Push
+        run: |
+          git push -f origin main:pending
