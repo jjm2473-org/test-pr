@@ -22,8 +22,8 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.event.merge_group.head_ref }}
           GITHUB_BASE_REF: ${{ github.event.merge_group.base_ref }}
         run: |
-          MG_BASE_BRANCH=$(echo $GITHUB_BASE_REF | sed 's#^refs/heads/##')
-          MG_HEAD_BRANCH=$(echo $GITHUB_HEAD_REF | sed 's#^refs/heads/##')
+          export MG_BASE_BRANCH=$(echo $GITHUB_BASE_REF | sed 's#^refs/heads/##')
+          export MG_HEAD_BRANCH=$(echo $GITHUB_HEAD_REF | sed 's#^refs/heads/##')
           echo "MG_BASE_BRANCH=$MG_BASE_BRANCH" | tee -a "$GITHUB_ENV"
           echo "MG_HEAD_BRANCH=$MG_HEAD_BRANCH" | tee -a "$GITHUB_ENV"
 
