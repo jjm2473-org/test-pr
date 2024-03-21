@@ -68,6 +68,6 @@ jobs:
               pull_number:PULL_NUMBER,
               merge_method:"rebase"
             })
-            console.log(mr)
+            return mr.status >= 200 && mr.status < 300 && mr.data.merged
 
 
