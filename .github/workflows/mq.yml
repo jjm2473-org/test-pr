@@ -9,7 +9,6 @@ env:
 
 jobs:
   mq:
-    if: false
     runs-on: ubuntu-latest
     name: iStore Merge Queue
     steps:
