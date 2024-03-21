@@ -17,5 +17,93 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
 
-      - name: dummy
-        run: sleep 1
+      - name: Detect branchs
+        env:
+          GITHUB_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          GITHUB_BASE_REF: ${{ github.event.merge_group.base_ref }}
+        run: |
+          MG_BASE_BRANCH=$(echo $GITHUB_BASE_REF | sed 's#^refs/heads/##')
+          MG_HEAD_BRANCH=$(echo $GITHUB_HEAD_REF | sed 's#^refs/heads/##')
+          echo "MG_BASE_BRANCH=$MG_BASE_BRANCH" | tee -a "$GITHUB_ENV"
+          echo "MG_HEAD_BRANCH=$MG_HEAD_BRANCH" | tee -a "$GITHUB_ENV"
+
+      - name: Checkout BASE branch
+        uses: actions/checkout@main
+        with:
+          ref: ${{ env.MG_BASE_BRANCH }}
+          fetch-depth: 1
+
+      - name: Fetch HEAD branch
+        run: |
+          git remote set-branches origin $MG_BASE_BRANCH
+          git remote set-branches --add origin $MG_HEAD_BRANCH
+          git fetch
+          git merge-base --is-ancestor $MG_BASE_BRANCH origin/$MG_HEAD_BRANCH || { echo "$MG_HEAD_BRANCH branch MUST rebase to ${MG_BASE_BRANCH}!" >&2; exit 1; }
+
+      - name: Clone a workspace
+        run: |
+          git clone . ../cloned
+          rm -rf ../cloned/.git
+          cp -a .git ../cloned/
+
+      - name: Mkdirs
+        run: |
+          mkdir staging_dir
+
+      - name: Save Current ipk list before
+        run: |
+          find work -type f | tee staging_dir/old.lst
+
+      - name: List Commits
+        run: |
+          git log --reverse --pretty=format:'%H' "origin/${MG_HEAD_BRANCH}...${MG_BASE_BRANCH}" > staging_dir/commits
+          cat staging_dir/commits
+          [ -s staging_dir/commits ]
+          echo >>staging_dir/commits
+
+      - name: Git user
+        run: |
+          git config user.email "actions-bot@noreply.github.com"
+          git config user.name "Actions Bot"
+
+      - name: Purge and Merge
+        run: |
+          while read; do
+            commit="$REPLY"
+            [ -n "$commit" ] || continue
+            echo "pick $commit"
+            git show --pretty= --name-only --no-renames $commit | grep '\.ipk$' || true > staging_dir/files
+            echo >>staging_dir/files
+            git cherry-pick $commit
+            git -C ../cloned checkout $commit
+            while read; do
+              file="$REPLY"
+              [ -n "$file" ] || continue
+              dir="`dirname $file`"
+              rm -f "$file"
+              [ -f "../cloned/$file" ] || continue
+              pkg=`tar -xOf "../cloned/$file" ./control.tar.gz | tar -xOz ./control | grep '^Package: ' | sed 's/^Package: \(.*\)$/\1/'`
+              ls "$dir/$pkg"_*.ipk | while read; do
+                del="$REPLY"
+                pkg0=`tar -xOf "$del" ./control.tar.gz | tar -xOz ./control | grep '^Package: ' | sed 's/^Package: \(.*\)$/\1/'`
+                [ "$pkg" = "$pkg0" ] || continue
+                rm -f "$del"
+              done
+              mkdir -p "$dir"
+              cp -a "../cloned/$file" "$file"
+            done < staging_dir/files
+            git add --all
+            git commit --no-edit --amend
+          done < staging_dir/commits
+
+      - name: Save Current ipk list after
+        run: |
+          find work -type f | tee staging_dir/new.lst
+
+      - name: Report
+        run: diff -au1 staging_dir/old.lst staging_dir/new.lst || true
+
+      - name: Push
+        run: |
+          git push -f origin ${MG_BASE_BRANCH}:${MG_HEAD_BRANCH}
+
