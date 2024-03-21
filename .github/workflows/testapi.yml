@@ -1,0 +1,33 @@
+name: TestAPI
+
+on:
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  testapi:
+    runs-on: ubuntu-latest
+    name: TestAPI
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: create pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.create({
+              owner:github.repository_owner,
+              repo:github.repository,
+              title:"Auto Merging",
+              head:"ci/automerging",
+              base:"main",
+              body:"# Test Content\nLine2\n```bash\necho hi\n```\n"
+            })
+            console.log(pr)
+
+
