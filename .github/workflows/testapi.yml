@@ -30,8 +30,8 @@ jobs:
               base:"main",
               per_page:1
             })
-            if (oldprs.length > 0) {
-              const pr_num=oldprs[0].number
+            if (oldprs.status >= 200 && oldprs.status < 300 && oldprs.data.length > 0) {
+              const pr_num=oldprs.data[0].number
               console.log("PR already existed, update #", pr_num)
               await github.rest.pulls.update({
                 owner:context.repo.owner,
