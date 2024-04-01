@@ -1,0 +1,32 @@
+name: iStore PR check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  pending:
+    runs-on: ubuntu-latest
+    name: iStore Pending Check
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - name: iStore Fail on pr to main
+        if: github.event_name == 'pull_request' && !((github.head_ref == 'pending' || github.head_ref == 'ci/automerging') && github.event.pull_request.base.repo.full_name == github.event.pull_request.head.repo.full_name)
+        run: |
+          echo "Must PR to pending branch!" >&2
+          exit 1
+
+      - name: Check pass
+        if: !failure()
+        run: |
+          echo "OK"
+          true
+
