@@ -9,7 +9,7 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
-  pending:
+  check:
     runs-on: ubuntu-latest
     name: iStore Pending Check
     steps:
