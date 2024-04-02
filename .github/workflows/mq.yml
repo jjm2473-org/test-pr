@@ -1,8 +1,8 @@
 name: iStore Merge Queue
 
-on:
-  merge_group:
-    types: [checks_requested]
+# on:
+#   merge_group:
+#     types: [checks_requested]
 
 env:
   TZ: Asia/Shanghai
