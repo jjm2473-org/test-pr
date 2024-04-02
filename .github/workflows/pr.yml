@@ -25,7 +25,6 @@ jobs:
           exit 1
 
       - name: Check pass
-        if: !failure()
         run: |
           echo "OK"
           true
