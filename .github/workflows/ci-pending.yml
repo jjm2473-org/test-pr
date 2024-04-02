@@ -1,6 +1,7 @@
 name: iStore Pending CI
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - pending
@@ -13,6 +14,7 @@ env:
 
 jobs:
   pending:
+    if: github.event_name != 'push' || !github.event.forced
     runs-on: ubuntu-latest
     name: iStore Pending CI
     steps:
