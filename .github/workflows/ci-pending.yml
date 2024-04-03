@@ -14,7 +14,7 @@ env:
 
 jobs:
   pending:
-    if: github.event_name != 'push' || ! github.event.forced
+    if: github.event_name != 'push' || ! (github.event.forced || github.triggering_actor != 'github-merge-queue[bot]')
     runs-on: ubuntu-latest
     name: iStore Pending CI
     steps:
